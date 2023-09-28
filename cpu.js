@@ -16,8 +16,12 @@ class CPU {
     },{});
     
     // need 2 bytes and zero indexed
-    this.setRegister('sp', memory.byteLength - 1 - 1);
-    this.setRegister('fp', memory.byteLength - 1 - 1);
+    // this.setRegister('sp', memory.byteLength - 1 - 1);
+    // this.setRegister('fp', memory.byteLength - 1 - 1);
+  
+    //change to fixed starting address since cpu will now get all its information from the memory mapper.     
+    this.setRegister('sp', 0xffff - 1);
+    this.setRegister('fp', 0xffff - 1);
     
     this.stackFrameSize = 0;
   }
@@ -171,8 +175,8 @@ execute(instruction) {
     case instructions.ADD_REG_REG: {
       const r1 = this.fetch();
       const r2 = this.fetch();
-      const registerValue1 = this.registers.getUint16(r1 * 2);
-      const registerValue2 = this.registers.getUint16(r2 * 2);
+      const registerValue1 = this.registers.getUint16(r1);
+      const registerValue2 = this.registers.getUint16(r2);
       this.setRegister('acc', registerValue1 + registerValue2);
       return;
   }
@@ -227,13 +231,23 @@ execute(instruction) {
       this.popState();
       return;
     }
+    
+    case instructions.HLT: {
+      return true;
+    }
 }
 }
 
-step() {
-  const instruction = this.fetch();
-  return this.execute(instruction);
+  step() {
+    const instruction = this.fetch();
+    return this.execute(instruction);
 }
+  run() {
+    const halt = this.step();
+    if (!halt) {
+      setImmediate(() => this.run());
+    }
+  }  
 }
 
 module.exports =  CPU ;
